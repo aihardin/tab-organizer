@@ -1,0 +1,50 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Tab Organizer</title>
+  <link rel="stylesheet" href="popup.css">
+</head>
+<body>
+  <div class="header">
+    <span class="logo">&#128193;</span>
+    <h1>Tab Organizer</h1>
+  </div>
+
+  <div id="no-key-banner" class="banner banner-warn hidden">
+    No API key set. <a href="#" id="open-settings">Open Settings</a>
+  </div>
+
+  <div id="main-view">
+    <label for="goal-input">What's your goal today?</label>
+    <textarea
+      id="goal-input"
+      placeholder="e.g. finish the RNA-seq analysis pipeline"
+      rows="3"
+    ></textarea>
+    <button id="analyze-btn">Analyze Tabs</button>
+  </div>
+
+  <div id="loading-view" class="hidden">
+    <div class="spinner"></div>
+    <p id="loading-text">Gathering tabs...</p>
+  </div>
+
+  <div id="done-view" class="hidden">
+    <p class="done-msg">&#10003; Review ready! Check the new tab that opened.</p>
+    <button id="reopen-btn">Reopen Review Tab</button>
+  </div>
+
+  <div id="error-view" class="hidden">
+    <p class="error-msg" id="error-text"></p>
+    <button id="retry-btn">Try Again</button>
+  </div>
+
+  <div class="footer">
+    <a href="#" id="settings-link">Settings</a>
+  </div>
+
+  <script src="popup.js"></script>
+</body>
+</html>

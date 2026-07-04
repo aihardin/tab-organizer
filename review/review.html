@@ -1,0 +1,78 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Tab Organizer — Review</title>
+  <link rel="stylesheet" href="review.css">
+</head>
+<body>
+  <div class="sidebar">
+    <div class="sidebar-header">
+      <span class="logo">&#128193;</span>
+      <h1>Tab Organizer</h1>
+    </div>
+
+    <div id="goal-display" class="goal-box hidden">
+      <span class="goal-label">Goal</span>
+      <p id="goal-text"></p>
+    </div>
+
+    <div class="stats-row hidden" id="stats-row">
+      <div class="stat"><span id="stat-total">—</span><small>tabs</small></div>
+      <div class="stat"><span id="stat-keep">—</span><small>keeping</small></div>
+      <div class="stat"><span id="stat-close">—</span><small>closing</small></div>
+    </div>
+
+    <div class="action-panel">
+      <button id="btn-download" class="action-btn btn-green" disabled>
+        &#8659; Download Summary (.md)
+      </button>
+      <button id="btn-bookmark" class="action-btn btn-indigo" disabled>
+        &#128278; Bookmark All Groups
+      </button>
+      <button id="btn-close" class="action-btn btn-red" disabled>
+        &#10005; Close Non-Kept Tabs
+      </button>
+    </div>
+
+    <div class="action-panel">
+      <button id="btn-select-top10" class="secondary-btn" disabled>Select only Top 10</button>
+      <button id="btn-select-all" class="secondary-btn" disabled>Select all tabs</button>
+      <button id="btn-select-none" class="secondary-btn" disabled>Deselect all</button>
+    </div>
+
+    <div id="action-status" class="action-status hidden"></div>
+  </div>
+
+  <div class="main">
+    <div id="loading-state" class="center-msg">
+      <div class="spinner"></div>
+      <p>Loading analysis...</p>
+    </div>
+
+    <div id="error-state" class="center-msg hidden">
+      <p class="error-text" id="error-msg">Something went wrong.</p>
+    </div>
+
+    <div id="content" class="hidden">
+      <section id="top10-section">
+        <h2>&#11088; Top 10 Tabs <small id="top10-hint"></small></h2>
+        <div id="top10-list"></div>
+      </section>
+
+      <section id="groups-section">
+        <h2>All Groups</h2>
+        <div id="groups-list"></div>
+      </section>
+
+      <section id="summary-section">
+        <h2>Summary Preview</h2>
+        <pre id="summary-content"></pre>
+      </section>
+    </div>
+  </div>
+
+  <script src="review.js"></script>
+</body>
+</html>

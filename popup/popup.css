@@ -1,0 +1,167 @@
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+body {
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  font-size: 14px;
+  color: #1a1a2e;
+  background: #fff;
+  width: 300px;
+  padding: 16px;
+}
+
+.header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 14px;
+}
+
+.logo {
+  font-size: 20px;
+}
+
+h1 {
+  font-size: 16px;
+  font-weight: 600;
+  color: #1a1a2e;
+}
+
+label {
+  display: block;
+  font-weight: 500;
+  margin-bottom: 6px;
+  color: #444;
+}
+
+textarea {
+  width: 100%;
+  border: 1px solid #d0d5dd;
+  border-radius: 6px;
+  padding: 8px 10px;
+  font-size: 13px;
+  font-family: inherit;
+  resize: none;
+  outline: none;
+  color: #1a1a2e;
+  margin-bottom: 10px;
+  line-height: 1.4;
+}
+
+textarea:focus {
+  border-color: #6366f1;
+  box-shadow: 0 0 0 2px rgba(99, 102, 241, 0.15);
+}
+
+button {
+  width: 100%;
+  padding: 9px 14px;
+  background: #6366f1;
+  color: white;
+  border: none;
+  border-radius: 6px;
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background 0.15s;
+}
+
+button:hover {
+  background: #4f52c9;
+}
+
+button:disabled {
+  background: #a5b4fc;
+  cursor: not-allowed;
+}
+
+.banner {
+  padding: 8px 10px;
+  border-radius: 5px;
+  margin-bottom: 12px;
+  font-size: 13px;
+}
+
+.banner-warn {
+  background: #fffbeb;
+  border: 1px solid #fcd34d;
+  color: #92400e;
+}
+
+.banner a {
+  color: #92400e;
+  font-weight: 600;
+}
+
+.hidden {
+  display: none !important;
+}
+
+#loading-view {
+  text-align: center;
+  padding: 20px 0;
+}
+
+.spinner {
+  width: 28px;
+  height: 28px;
+  border: 3px solid #e5e7eb;
+  border-top-color: #6366f1;
+  border-radius: 50%;
+  animation: spin 0.7s linear infinite;
+  margin: 0 auto 10px;
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
+#loading-text {
+  color: #666;
+  font-size: 13px;
+}
+
+.done-msg {
+  color: #059669;
+  font-size: 13px;
+  margin-bottom: 10px;
+}
+
+.error-msg {
+  color: #dc2626;
+  font-size: 13px;
+  margin-bottom: 10px;
+  line-height: 1.4;
+}
+
+#reopen-btn {
+  background: #10b981;
+}
+#reopen-btn:hover {
+  background: #059669;
+}
+
+#retry-btn {
+  background: #6b7280;
+}
+#retry-btn:hover {
+  background: #4b5563;
+}
+
+.footer {
+  margin-top: 14px;
+  text-align: right;
+}
+
+.footer a {
+  font-size: 12px;
+  color: #9ca3af;
+  text-decoration: none;
+}
+
+.footer a:hover {
+  color: #6366f1;
+}
