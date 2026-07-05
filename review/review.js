@@ -15,6 +15,12 @@ async function init() {
   tabData = stored.tabData;
   analysisResult = stored.analysisResult;
 
+  // Normalize against a partial/malformed result so rendering can never crash.
+  analysisResult.groups = Array.isArray(analysisResult.groups) ? analysisResult.groups : [];
+  analysisResult.top10 = Array.isArray(analysisResult.top10) ? analysisResult.top10 : [];
+  analysisResult.summary_markdown =
+    typeof analysisResult.summary_markdown === 'string' ? analysisResult.summary_markdown : '';
+
   const tabMap = new Map(tabData.map(t => [t.id, t]));
 
   // Pre-select top10 as "keep"
