@@ -73,9 +73,14 @@ async function handleBookmarkTabs(excludedIds) {
   const excluded = new Set(Array.isArray(excludedIds) ? excludedIds : []);
   const groups = Array.isArray(analysisResult.groups) ? analysisResult.groups : [];
   const tabMap = new Map(tabData.map(t => [t.id, t]));
-  const dateStr = new Date().toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' });
+  // Include the time so re-running on the same day (e.g. tabs from another
+  // machine) creates a distinct, clearly-labeled folder instead of a second
+  // folder with an identical name.
+  const stamp = new Date().toLocaleString('en-US', {
+    year: 'numeric', month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit'
+  });
 
-  const parentFolder = await chrome.bookmarks.create({ title: `Tab Organizer — ${dateStr}` });
+  const parentFolder = await chrome.bookmarks.create({ title: `Tab Organizer — ${stamp}` });
 
   // Folders are created sequentially (there are only a handful), but each
   // folder's bookmarks are created in parallel — this collapses the wall-clock
