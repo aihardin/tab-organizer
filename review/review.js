@@ -1,6 +1,8 @@
 let tabData = [];
 let analysisResult = null;
 let keepSet = new Set();
+let bookmarkExcluded = new Set(); // tab IDs the user has removed from bookmarking
+let groupedTabCount = 0;          // total tabs across groups (for the bookmark count)
 
 // ── Load & render ──────────────────────────────────────────────────
 
@@ -31,11 +33,15 @@ async function init() {
     document.getElementById('goal-display').classList.remove('hidden');
   }
 
+  groupedTabCount = analysisResult.groups.reduce(
+    (n, g) => n + g.tabs.filter(id => tabMap.has(id)).length, 0);
+
   renderTop10(analysisResult.top10, tabMap);
   renderGroups(analysisResult.groups, tabMap);
   renderSummary(analysisResult.summary_markdown);
   updateStats();
   enableButtons();
+  updateBookmarkCount();
 
   document.getElementById('loading-state').classList.add('hidden');
   document.getElementById('content').classList.remove('hidden');
@@ -76,8 +82,28 @@ function renderGroups(groups, tabMap) {
       <span class="group-name">${escHtml(group.name)}</span>
       <span class="relevance-badge ${relClass}">${group.relevance}</span>
       <span class="group-count">${group.tabs.length} tabs</span>
-      <span class="chevron open">&#9656;</span>
     `;
+
+    // "Skip all / Include all" toggles this whole group in/out of bookmarking.
+    const groupIds = group.tabs.filter(id => tabMap.has(id));
+    const skip = document.createElement('button');
+    skip.type = 'button';
+    skip.className = 'group-skip';
+    skip.textContent = 'Skip all';
+    skip.addEventListener('click', (e) => {
+      e.stopPropagation(); // don't collapse the group
+      const allExcluded = groupIds.length > 0 && groupIds.every(id => bookmarkExcluded.has(id));
+      groupIds.forEach(id => allExcluded ? bookmarkExcluded.delete(id) : bookmarkExcluded.add(id));
+      refreshAllBmVisuals(); // one DOM pass instead of one query per tab
+      skip.textContent = allExcluded ? 'Skip all' : 'Include all';
+      updateBookmarkCount();
+    });
+    header.appendChild(skip);
+
+    const chevron = document.createElement('span');
+    chevron.className = 'chevron open';
+    chevron.innerHTML = '&#9656;';
+    header.appendChild(chevron);
 
     const tabsDiv = document.createElement('div');
     tabsDiv.className = 'group-tabs';
@@ -113,7 +139,9 @@ function renderSummary(markdown) {
 function makeTabCard(tab, rank) {
   const card = document.createElement('div');
   card.className = 'tab-card';
+  card.dataset.cardId = tab.id;
   if (!keepSet.has(tab.id)) card.classList.add('dimmed');
+  if (bookmarkExcluded.has(tab.id)) card.classList.add('bm-excluded');
 
   const checkbox = document.createElement('input');
   checkbox.type = 'checkbox';
@@ -147,6 +175,15 @@ function makeTabCard(tab, rank) {
     badge.className = 'tab-rank';
     badge.textContent = `#${rank}`;
     card.appendChild(badge);
+  } else {
+    // Group cards get a bookmark toggle; click to remove/restore from bookmarking.
+    const bm = document.createElement('button');
+    bm.type = 'button';
+    bm.className = 'bm-toggle';
+    bm.textContent = '\u{1F516}'; // 🔖
+    bm.title = bookmarkExcluded.has(tab.id) ? 'Add back to bookmarks' : 'Exclude from bookmarks';
+    bm.addEventListener('click', () => toggleBookmark(tab.id));
+    card.appendChild(bm);
   }
 
   return card;
@@ -160,6 +197,50 @@ function updateStats() {
   document.getElementById('stat-total').textContent = total;
   document.getElementById('stat-keep').textContent = keep;
   document.getElementById('stat-close').textContent = total - keep;
+}
+
+// ── Bookmark selection ─────────────────────────────────────────────
+
+function setBookmarkExcluded(id, excluded) {
+  if (excluded) bookmarkExcluded.add(id);
+  else bookmarkExcluded.delete(id);
+  updateBmVisual(id);
+}
+
+function toggleBookmark(id) {
+  setBookmarkExcluded(id, !bookmarkExcluded.has(id));
+  updateBookmarkCount();
+}
+
+// Reflect a tab's bookmark state on every card that shows it (a top-10 tab also
+// appears in its group), striking through the title when excluded.
+function updateBmVisual(id) {
+  const excluded = bookmarkExcluded.has(id);
+  document.querySelectorAll(`.tab-card[data-card-id="${id}"]`).forEach(card => {
+    card.classList.toggle('bm-excluded', excluded);
+    const bm = card.querySelector('.bm-toggle');
+    if (bm) bm.title = excluded ? 'Add back to bookmarks' : 'Exclude from bookmarks';
+  });
+}
+
+// Re-sync every card's bookmark visual from the set in a single pass — used for
+// bulk group toggles where updating per-tab would query the DOM repeatedly.
+function refreshAllBmVisuals() {
+  document.querySelectorAll('.tab-card[data-card-id]').forEach(card => {
+    const excluded = bookmarkExcluded.has(parseInt(card.dataset.cardId, 10));
+    card.classList.toggle('bm-excluded', excluded);
+    const bm = card.querySelector('.bm-toggle');
+    if (bm) bm.title = excluded ? 'Add back to bookmarks' : 'Exclude from bookmarks';
+  });
+}
+
+function updateBookmarkCount() {
+  const count = groupedTabCount - bookmarkExcluded.size;
+  const btn = document.getElementById('btn-bookmark');
+  btn.textContent = count > 0
+    ? `\u{1F516} Bookmark ${count} tab${count === 1 ? '' : 's'}`
+    : '\u{1F516} Bookmark (none selected)';
+  btn.disabled = count === 0;
 }
 
 // ── Buttons ───────────────────────────────────────────────────────
@@ -196,17 +277,27 @@ document.getElementById('btn-download').addEventListener('click', () => {
 });
 
 document.getElementById('btn-bookmark').addEventListener('click', async () => {
+  const willBookmark = groupedTabCount - bookmarkExcluded.size;
+  if (willBookmark <= 0) {
+    showActionStatus('No tabs selected to bookmark.', 'info');
+    return;
+  }
+
   document.getElementById('btn-bookmark').disabled = true;
   showActionStatus('Bookmarking...', 'info');
-  // The worker reads groups + tab data from session storage, so no payload
-  // needs to be serialized across the message channel.
-  const response = await chrome.runtime.sendMessage({ action: 'bookmarkTabs' });
+  // The worker reads groups + tab data from session storage; only the (usually
+  // small) list of excluded tab IDs is sent across the message channel.
+  const response = await chrome.runtime.sendMessage({
+    action: 'bookmarkTabs',
+    excludedIds: [...bookmarkExcluded]
+  });
   if (!response || response.error) {
     showActionStatus('Bookmark error: ' + (response?.error ?? 'Extension error — try again.'), 'error');
-    document.getElementById('btn-bookmark').disabled = false;
   } else {
-    showActionStatus('All tabs bookmarked in Chrome Bookmarks.', 'success');
+    const n = response.count ?? willBookmark;
+    showActionStatus(`Bookmarked ${n} tab${n === 1 ? '' : 's'} in Chrome Bookmarks.`, 'success');
   }
+  updateBookmarkCount(); // restore button label + enabled state
 });
 
 document.getElementById('btn-close').addEventListener('click', async () => {

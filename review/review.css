@@ -270,6 +270,57 @@ h2 small {
   flex-shrink: 0;
 }
 
+/* Bookmark toggle on group cards */
+.bm-toggle {
+  flex-shrink: 0;
+  width: 30px;
+  height: 30px;
+  padding: 0;
+  border: 1px solid #d0d5dd;
+  border-radius: 6px;
+  background: #eef2ff;
+  cursor: pointer;
+  font-size: 14px;
+  line-height: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: background 0.15s, opacity 0.15s, filter 0.15s;
+}
+
+.bm-toggle:hover {
+  background: #e0e7ff;
+}
+
+.tab-card.bm-excluded .tab-title {
+  text-decoration: line-through;
+  color: #9ca3af;
+}
+
+.tab-card.bm-excluded .bm-toggle {
+  background: #f3f4f6;
+  opacity: 0.55;
+  filter: grayscale(1);
+}
+
+/* Per-group "skip all / include all" bookmark toggle */
+.group-skip {
+  flex-shrink: 0;
+  font-size: 11px;
+  font-weight: 500;
+  padding: 3px 9px;
+  border: 1px solid #d0d5dd;
+  border-radius: 5px;
+  background: #fff;
+  color: #4b5563;
+  cursor: pointer;
+  transition: background 0.15s;
+}
+
+.group-skip:hover {
+  background: #eef0f4;
+}
+
 /* Group sections */
 .group-section {
   margin-bottom: 18px;

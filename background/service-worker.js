@@ -17,7 +17,7 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
   }
 
   if (message.action === 'bookmarkTabs') {
-    handleBookmarkTabs().then(sendResponse).catch(err => {
+    handleBookmarkTabs(message.excludedIds).then(sendResponse).catch(err => {
       sendResponse({ error: err.message });
     });
     return true;
@@ -62,7 +62,7 @@ async function handleAnalyzeTabs(goal) {
   return { success: true, tabCount: tabs.length };
 }
 
-async function handleBookmarkTabs() {
+async function handleBookmarkTabs(excludedIds) {
   // Read the tab data and groups from session storage rather than the message —
   // avoids serializing the whole tab array across the message channel.
   const { analysisResult, tabData } = await chrome.storage.session.get(['analysisResult', 'tabData']);
@@ -70,6 +70,7 @@ async function handleBookmarkTabs() {
     return { error: 'Session data expired. Please re-run the analysis from the toolbar.' };
   }
 
+  const excluded = new Set(Array.isArray(excludedIds) ? excludedIds : []);
   const groups = Array.isArray(analysisResult.groups) ? analysisResult.groups : [];
   const tabMap = new Map(tabData.map(t => [t.id, t]));
   const dateStr = new Date().toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' });
@@ -80,8 +81,11 @@ async function handleBookmarkTabs() {
   // folder's bookmarks are created in parallel — this collapses the wall-clock
   // time from O(total tabs) sequential round-trips to O(number of groups).
   // Order within a folder is not guaranteed, which is fine for topic groups.
+  let count = 0;
   for (const group of groups) {
-    const validTabs = group.tabs.map(id => tabMap.get(id)).filter(Boolean);
+    const validTabs = group.tabs
+      .map(id => tabMap.get(id))
+      .filter(tab => tab && !excluded.has(tab.id));
     if (validTabs.length === 0) continue;
 
     const folder = await chrome.bookmarks.create({
@@ -92,9 +96,15 @@ async function handleBookmarkTabs() {
     await Promise.all(validTabs.map(tab =>
       chrome.bookmarks.create({ parentId: folder.id, title: tab.title, url: tab.url })
     ));
+    count += validTabs.length;
   }
 
-  return { success: true };
+  // If every tab was excluded, don't leave an empty parent folder behind.
+  if (count === 0) {
+    await chrome.bookmarks.remove(parentFolder.id).catch(() => {});
+  }
+
+  return { success: true, count };
 }
 
 async function handleCloseTabs(idsToClose) {
