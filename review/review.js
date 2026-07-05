@@ -48,14 +48,21 @@ function renderTop10(top10Ids, tabMap) {
   const valid = top10Ids.filter(id => tabMap.has(id));
   hint.textContent = `(${valid.length} tabs)`;
 
+  // Build off-DOM in a fragment and append once, so hundreds of cards cause a
+  // single reflow instead of one per card.
+  const frag = document.createDocumentFragment();
   valid.forEach((id, i) => {
-    const tab = tabMap.get(id);
-    container.appendChild(makeTabCard(tab, i + 1));
+    frag.appendChild(makeTabCard(tabMap.get(id), i + 1));
   });
+  container.appendChild(frag);
 }
 
 function renderGroups(groups, tabMap) {
   const container = document.getElementById('groups-list');
+
+  // Accumulate every section off-DOM and append once at the end — a single
+  // reflow for the whole list rather than one per group/card.
+  const outer = document.createDocumentFragment();
 
   groups.forEach(group => {
     const section = document.createElement('div');
@@ -75,10 +82,12 @@ function renderGroups(groups, tabMap) {
     const tabsDiv = document.createElement('div');
     tabsDiv.className = 'group-tabs';
 
+    const cards = document.createDocumentFragment();
     group.tabs.forEach(id => {
       const tab = tabMap.get(id);
-      if (tab) tabsDiv.appendChild(makeTabCard(tab, null));
+      if (tab) cards.appendChild(makeTabCard(tab, null));
     });
+    tabsDiv.appendChild(cards);
 
     header.addEventListener('click', () => {
       const chevron = header.querySelector('.chevron');
@@ -89,8 +98,10 @@ function renderGroups(groups, tabMap) {
 
     section.appendChild(header);
     section.appendChild(tabsDiv);
-    container.appendChild(section);
+    outer.appendChild(section);
   });
+
+  container.appendChild(outer);
 }
 
 function renderSummary(markdown) {
@@ -187,11 +198,9 @@ document.getElementById('btn-download').addEventListener('click', () => {
 document.getElementById('btn-bookmark').addEventListener('click', async () => {
   document.getElementById('btn-bookmark').disabled = true;
   showActionStatus('Bookmarking...', 'info');
-  const response = await chrome.runtime.sendMessage({
-    action: 'bookmarkTabs',
-    groups: analysisResult.groups,
-    tabData
-  });
+  // The worker reads groups + tab data from session storage, so no payload
+  // needs to be serialized across the message channel.
+  const response = await chrome.runtime.sendMessage({ action: 'bookmarkTabs' });
   if (!response || response.error) {
     showActionStatus('Bookmark error: ' + (response?.error ?? 'Extension error — try again.'), 'error');
     document.getElementById('btn-bookmark').disabled = false;
